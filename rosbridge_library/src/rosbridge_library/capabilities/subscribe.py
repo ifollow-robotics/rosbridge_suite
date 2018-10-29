@@ -33,11 +33,13 @@
 import fnmatch
 from threading import Lock
 from functools import partial
-from rospy import loginfo
+from rospy import loginfo, logwarn
 from rosbridge_library.capability import Capability
 from rosbridge_library.internal.subscribers import manager
 from rosbridge_library.internal.subscription_modifiers import MessageHandler
-from rosbridge_library.internal.pngcompression import encode
+from rosbridge_library.internal.pngcompression import encode as encode_png
+from rosbridge_library.internal.cbor_encoding import encode as encode_cbor
+from rosbridge_library.internal.message_conversion import extract_values
 
 try:
     from ujson import dumps
@@ -100,7 +102,7 @@ class Subscription():
         fragment_size   -- None if no fragmentation, or the maximum length of
         allowed outgoing messages
         compression     -- "none" if no compression, or some other value if
-        compression is to be used (current valid values are 'png')
+        compression is to be used (current valid values are 'png' and 'cbor')
 
          """
 
@@ -173,7 +175,12 @@ class Subscription():
             self.fragment_size = None
         else:
             self.fragment_size = min(frags)
+
         self.compression = "png" if "png" in f("compression") else "none"
+        if "cbor" in f("compression"):
+            if self.compression != "none":
+                logwarn("Got multiple compression settings for the same topic! Preferring cbor")
+            self.compression = "cbor"
 
         with self.handler_lock:
             self.handler = self.handler.set_throttle_rate(self.throttle_rate)
@@ -282,7 +289,7 @@ class Subscribe(Capability):
         fragment_size -- (optional) fragment the serialized message into msgs
         with payloads not greater than this value
         compression   -- (optional) compress the message. valid values are
-        'png' and 'none'
+        'png', 'cbor' and 'none'
 
         """
         # TODO: fragmentation, proper ids
@@ -300,11 +307,20 @@ class Subscribe(Capability):
         else:
             self.protocol.log("debug", "No topic security glob, not checking topic publish.")
 
-        outgoing_msg = {"op": "publish", "topic": topic, "msg": message}
+        payload = {"op": "publish", "topic": topic}
         if compression == "png":
-            outgoing_msg_dumped = dumps(outgoing_msg)
-            outgoing_msg = {"op": "png", "data": encode(outgoing_msg_dumped)}
-        self.protocol.send(outgoing_msg)
+            payload["msg"] = extract_values(message)
+            json = dumps(payload)
+            encoded = {"op": "png", "data": encode_png(json)}
+        elif compression == "cbor":
+            # CBOR encoder has its own value extractor
+            payload["msg"] = message
+            encoded = {"op": "cbor", "data": encode_cbor(payload)}
+        else:
+            payload["msg"] = extract_values(message)
+            encoded = payload
+
+        self.protocol.send(encoded)
 
     def finish(self):
         for subscription in self._subscriptions.values():

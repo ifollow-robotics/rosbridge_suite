@@ -57,6 +57,15 @@ class TestSubscribe(unittest.TestCase):
             self.assertEqual(subscription.queue_length, min_queue_length)
             self.assertEqual(subscription.fragment_size, min_frag_size)
             self.assertEqual(subscription.compression, "png")
+
+            list(subscription.clients.values())[0]["compression"] = "cbor"
+
+            subscription.update_params()
+
+            self.assertEqual(subscription.throttle_rate, min_throttle_rate)
+            self.assertEqual(subscription.queue_length, min_queue_length)
+            self.assertEqual(subscription.fragment_size, min_frag_size)
+            self.assertEqual(subscription.compression, "cbor")
         except:
             subscription.unregister()
             raise
