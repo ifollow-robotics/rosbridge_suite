@@ -34,7 +34,7 @@
 from threading import Lock
 from rospy import Subscriber, logerr
 from rostopic import get_topic_type
-from rosbridge_library.internal import ros_loader, message_conversion
+from rosbridge_library.internal import ros_loader
 from rosbridge_library.internal.topics import TopicNotEstablishedException
 from rosbridge_library.internal.topics import TypeConflictException
 
@@ -157,14 +157,6 @@ class MultiSubscriber():
         callbacks - subscriber callbacks to invoke
 
         """
-        # Try to convert the msg to JSON
-        json = None
-        try:
-            json = message_conversion.extract_values(msg)
-        except Exception as exc:
-            logerr("Exception while converting messages in subscriber callback : %s", exc)
-            return
-        
         # Get the callbacks to call
         if not callbacks:
             with self.lock:
@@ -173,7 +165,7 @@ class MultiSubscriber():
         # Pass the JSON to each of the callbacks
         for callback in callbacks:
             try:
-                callback(json)
+                callback(msg)
             except Exception as exc:
                 # Do nothing if one particular callback fails except log it
                 logerr("Exception calling subscribe callback: %s", exc)

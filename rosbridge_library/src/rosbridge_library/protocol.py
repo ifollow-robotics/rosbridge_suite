@@ -286,7 +286,9 @@ class Protocol:
         Returns a JSON string representing the dictionary
         """
         try:
-            if has_binary(msg) or self.bson_only_mode:
+            if isinstance(msg, bytearray):
+                return msg
+            elif has_binary(msg) or self.bson_only_mode:
                 return bson.BSON.encode(msg)
             else:    
                 return json.dumps(msg)

@@ -121,7 +121,8 @@ class RosbridgeWebSocket(WebSocketHandler):
         rospy.loginfo("Client disconnected. %d clients total.", cls.clients_connected)
 
     def send_message(self, message):
-        binary = type(message)==bson.BSON
+        #binary = type(message)==bson.BSON
+        binary = isinstance(message, bytearray)
         IOLoop.instance().add_callback(partial(self.write_message, message, binary))
 
     def check_origin(self, origin):

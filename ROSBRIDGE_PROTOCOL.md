@@ -71,6 +71,7 @@ Message compression / transformation:
 
   * **fragment** - a part of a fragmented message
   * **png** - a part of a PNG compressed fragmented message
+  * **cbor** - a part of a CBOR encoded fragmented message
 
 Rosbridge status messages:
 
@@ -167,6 +168,25 @@ message and read the bytes of the string into a PNG image. Then, ASCII-encode
 the image. This string is now used as the data field. If fragmentation is
 necessary, then fragment the data and set the ID, num and total fields to the
 appropriate values in the fragments. Otherwise these fields can be left out.
+
+#### 3.1.3 CBOR encoding ( _cbor_ )
+
+A faster way to encode messages with large byte arrays.
+
+```json
+{ "op": "cbor",
+  (optional) "id": <string>,
+  "data": <string>,
+  (optional) "num": <int>,
+  (optional) "total": <int>
+}
+```
+
+ * **id** – only required if the message is fragmented. Identifies the
+    fragments for the fragmented message.
+ * **data** – a fragment of a CBOR-encoded message or an entire message.
+ * **num** – only required if the message is fragmented. The index of the fragment.
+ * **total** – only required if the message is fragmented. The total number of fragments.
 
 ### 3.2 Status messages
 
