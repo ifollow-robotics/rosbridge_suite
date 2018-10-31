@@ -223,24 +223,18 @@ class Protocol:
         """
         pass
 
-    def send(self, message, cid=None):
+    def send(self, serialized, cid=None):
         """ Called internally in preparation for sending messages to the client
 
         This method pre-processes the message then passes it to the overridden
         outgoing method.
 
         Keyword arguments:
-        message -- a dict of message values to be marshalled and sent
-        cid     -- (optional) an associated id
+        serialized -- an encoded message
+        cid        -- (optional) an associated id
 
         """
-        serialized = self.serialize(message, cid)
         if serialized is not None:
-            if self.png == "png":
-                # TODO: png compression on outgoing messages
-                # encode message
-                pass
-
             fragment_list = None
             if self.fragment_size != None and len(serialized) > self.fragment_size:
                 mid = message.get("id", None)
@@ -272,32 +266,6 @@ class Protocol:
         """
         for capability in self.capabilities:
             capability.finish()
-
-    def serialize(self, msg, cid=None):
-        """ Turns a dictionary of values into the appropriate wire-level
-        representation.
-
-        Default behaviour uses JSON.  Override to use a different container.
-
-        Keyword arguments:
-        msg -- the dictionary of values to serialize
-        cid -- (optional) an ID associated with this.  Will be logged on err.
-
-        Returns a JSON string representing the dictionary
-        """
-        try:
-            if isinstance(msg, bytearray):
-                return msg
-            elif has_binary(msg) or self.bson_only_mode:
-                return bson.BSON.encode(msg)
-            else:    
-                return json.dumps(msg)
-        except:
-            if cid is not None:
-                # Only bother sending the log message if there's an id
-                self.log("error", "Unable to serialize %s message to client"
-                         % msg["op"], cid)
-            return None
 
     def deserialize(self, msg, cid=None):
 

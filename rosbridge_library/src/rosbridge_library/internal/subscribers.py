@@ -37,6 +37,7 @@ from rostopic import get_topic_type
 from rosbridge_library.internal import ros_loader
 from rosbridge_library.internal.topics import TopicNotEstablishedException
 from rosbridge_library.internal.topics import TypeConflictException
+from rosbridge_library.internal.message_encoder import OutgoingMessageEncoder
 
 """ Manages and interfaces with ROS Subscriber objects.  A single subscriber
 is shared between multiple clients
@@ -157,6 +158,9 @@ class MultiSubscriber():
         callbacks - subscriber callbacks to invoke
 
         """
+        # Wrap the message in an encoder
+        wrapper = OutgoingMessageEncoder(msg)
+
         # Get the callbacks to call
         if not callbacks:
             with self.lock:
@@ -165,7 +169,7 @@ class MultiSubscriber():
         # Pass the JSON to each of the callbacks
         for callback in callbacks:
             try:
-                callback(msg)
+                callback(wrapper)
             except Exception as exc:
                 # Do nothing if one particular callback fails except log it
                 logerr("Exception calling subscribe callback: %s", exc)

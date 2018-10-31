@@ -2,7 +2,6 @@ import struct
 import traceback
 
 from rosbridge_library.internal.cbor_lib import dumps, loads, Tag
-from base64 import standard_b64encode, standard_b64decode
 from genpy.message import Message
 
 
@@ -89,15 +88,12 @@ def encode(msg):
             if _is_ros_msg(v):
                 msg[k] = _msg_to_dict(v)
 
-        buf = dumps(msg)
-
-        b64 = standard_b64encode(buf)
+        buf = bytearray(dumps(msg))
     except:
         traceback.print_exc()
         raise
-    return b64
+    return buf
 
 
 def decode(msg):
-    buf = standard_b64decode(msg)
-    return loads(buf)
+    return loads(msg)
