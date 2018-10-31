@@ -6,6 +6,7 @@ import unittest
 from rosgraph import Master
 
 from time import sleep, time
+from json import loads
 
 from rosbridge_library.internal.subscribers import *
 from rosbridge_library.internal.topics import *
@@ -93,13 +94,13 @@ class TestMultiSubscriber(unittest.TestCase):
         received = {"msg": None}
 
         def cb(msg):
-            received["msg"] = msg
+            received["msg"] = msg.message
 
         multi.subscribe(client, cb)
         sleep(0.5)
         pub.publish(msg)
         sleep(0.5)
-        self.assertEqual(msg.data, received["msg"]["data"])
+        self.assertEqual(msg.data, received["msg"].data)
 
     def test_subscribe_receive_json_multiple(self):
         topic = "/test_subscribe_receive_json_multiple"
@@ -114,7 +115,7 @@ class TestMultiSubscriber(unittest.TestCase):
         received = {"msgs": []}
 
         def cb(msg):
-            received["msgs"].append(msg["data"])
+            received["msgs"].append(msg.message.data)
 
         multi.subscribe(client, cb)
         sleep(0.5)
@@ -167,18 +168,18 @@ class TestMultiSubscriber(unittest.TestCase):
         received = {"msg1": None, "msg2": None}
 
         def cb1(msg):
-            received["msg1"] = msg
+            received["msg1"] = msg.message
 
         def cb2(msg):
-            received["msg2"] = msg
+            received["msg2"] = msg.message
 
         multi.subscribe(client1, cb1)
         multi.subscribe(client2, cb2)
         sleep(0.5)
         pub.publish(msg)
         sleep(0.5)
-        self.assertEqual(msg.data, received["msg1"]["data"])
-        self.assertEqual(msg.data, received["msg2"]["data"])
+        self.assertEqual(msg.data, received["msg1"].data)
+        self.assertEqual(msg.data, received["msg2"].data)
 
 
 PKG = 'rosbridge_library'

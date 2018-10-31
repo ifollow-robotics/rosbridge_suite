@@ -6,6 +6,7 @@ import unittest
 from rosgraph import Master
 
 from time import sleep
+from json import loads
 
 from rosbridge_library.internal.subscribers import *
 from rosbridge_library.internal.topics import *
@@ -175,13 +176,13 @@ class TestSubscriberManager(unittest.TestCase):
         received = {"msg": None}
 
         def cb(msg):
-            received["msg"] = msg
+            received["msg"] = msg.message
 
         manager.subscribe(client, topic, cb, msg_type)
         sleep(0.5)
         pub.publish(msg)
         sleep(0.5)
-        self.assertEqual(msg.data, received["msg"]["data"])
+        self.assertEqual(msg.data, received["msg"].data)
 
 
 PKG = 'rosbridge_library'

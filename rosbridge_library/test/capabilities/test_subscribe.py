@@ -111,7 +111,7 @@ class TestSubscribe(unittest.TestCase):
         received = {"msg": None}
 
         def send(outgoing):
-            received["msg"] = outgoing
+            received["msg"] = loads(outgoing)
 
         proto.send = send
 
