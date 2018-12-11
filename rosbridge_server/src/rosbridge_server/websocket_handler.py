@@ -34,6 +34,8 @@ import rospy
 
 from rosauth.srv import Authentication
 
+import threading
+import traceback
 from functools import partial
 
 from tornado.ioloop import IOLoop
@@ -42,10 +44,6 @@ from tornado.websocket import WebSocketHandler
 from rosbridge_library.rosbridge_protocol import RosbridgeProtocol
 from rosbridge_library.util import json, bson
 
-try:
-    import queue
-except ImportError:
-    import Queue as queue  # Python 2
 
 class RosbridgeWebSocket(WebSocketHandler):
     client_id_seed = 0
@@ -77,7 +75,7 @@ class RosbridgeWebSocket(WebSocketHandler):
             self.protocol.outgoing = self.send_message
             self.set_nodelay(True)
             self.authenticated = False
-            self.outgoing_queue = queue.Queue(maxsize=1)
+            self.write_lock = threading.Lock()
             cls.client_id_seed += 1
             cls.clients_connected += 1
             if cls.client_count_pub:
@@ -123,12 +121,6 @@ class RosbridgeWebSocket(WebSocketHandler):
         cls = self.__class__
         cls.clients_connected -= 1
         self.protocol.finish()
-        # Purge the queue *after* finishing the protocol.
-        while not self.outgoing_queue.empty():
-            try:
-                self.outgoing_queue.get(block=False)
-            except queue.Empty:
-                pass
         if cls.client_count_pub:
             cls.client_count_pub.publish(cls.clients_connected)
         rospy.loginfo("Client disconnected. %d clients total.", cls.clients_connected)
@@ -142,17 +134,20 @@ class RosbridgeWebSocket(WebSocketHandler):
         else:
             binary = False
 
-        self.outgoing_queue.put((message, binary))
-        IOLoop.instance().add_callback(self.write_from_queue)
+        with self.write_lock:
+            IOLoop.instance().add_callback(partial(self.write_sync, message, binary))
 
-    def write_from_queue(self):
+    def write_sync(self, message, binary):
+        def release(f):
+            self.write_lock.release()
+        self.write_lock.acquire()
         try:
-            message, binary = self.outgoing_queue.get_nowait()
-        except queue.Empty:
-            rospy.logerr('Outgoing message queue was unexpectedly Empty')
-            return
-
-        self.write_message(message, binary)
+            future = self.write_message(message, binary)
+            IOLoop.instance().add_future(future, release)
+        except:
+            traceback.print_exc()  # We should really use an IOLoop exception handler.
+            self.write_lock.release()
+            raise
 
     def check_origin(self, origin):
         return True
