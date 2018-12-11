@@ -35,13 +35,17 @@ import rospy
 from rosauth.srv import Authentication
 
 from functools import partial
-import queue
 
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
 from rosbridge_library.rosbridge_protocol import RosbridgeProtocol
 from rosbridge_library.util import json, bson
+
+try:
+    import queue
+except ImportError:
+    import Queue as queue  # Python 2
 
 class RosbridgeWebSocket(WebSocketHandler):
     client_id_seed = 0
