@@ -123,6 +123,12 @@ class RosbridgeWebSocket(WebSocketHandler):
         cls = self.__class__
         cls.clients_connected -= 1
         self.protocol.finish()
+        # Purge the queue *after* finishing the protocol.
+        while not self.outgoing_queue.empty():
+            try:
+                self.outgoing_queue.get(block=False)
+            except queue.Empty:
+                pass
         if cls.client_count_pub:
             cls.client_count_pub.publish(cls.clients_connected)
         rospy.loginfo("Client disconnected. %d clients total.", cls.clients_connected)
