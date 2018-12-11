@@ -35,6 +35,7 @@ import rospy
 from rosauth.srv import Authentication
 
 from functools import partial
+import queue
 
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
@@ -72,6 +73,7 @@ class RosbridgeWebSocket(WebSocketHandler):
             self.protocol.outgoing = self.send_message
             self.set_nodelay(True)
             self.authenticated = False
+            self.outgoing_queue = queue.Queue(maxsize=1)
             cls.client_id_seed += 1
             cls.clients_connected += 1
             if cls.client_count_pub:
@@ -130,7 +132,17 @@ class RosbridgeWebSocket(WebSocketHandler):
         else:
             binary = False
 
-        IOLoop.instance().add_callback(partial(self.write_message, message, binary))
+        self.outgoing_queue.put((message, binary))
+        IOLoop.instance().add_callback(self.write_from_queue)
+
+    def write_from_queue(self):
+        try:
+            message, binary = self.outgoing_queue.get_nowait()
+        except queue.Empty:
+            rospy.logerr('Outgoing message queue was unexpectedly Empty')
+            return
+
+        self.write_message(message, binary)
 
     def check_origin(self, origin):
         return True
