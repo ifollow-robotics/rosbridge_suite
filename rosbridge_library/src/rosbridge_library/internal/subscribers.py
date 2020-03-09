@@ -219,9 +219,9 @@ class SubscriberManager():
 
         self._subscribers[topic].unsubscribe(client_id)
 
-        if not self._subscribers[topic].has_subscribers():
-            self._subscribers[topic].unregister()
-            del self._subscribers[topic]
+        #if not self._subscribers[topic].has_subscribers():
+        #    self._subscribers[topic].unregister()
+        #    del self._subscribers[topic]
 
 
 manager = SubscriberManager()

@@ -312,9 +312,9 @@ class PublisherManager():
         if topic in self.unregister_timers:
             self.unregister_timers[topic].cancel()
             del self.unregister_timers[topic]
-        self.unregister_timers[topic] = Timer(self.unregister_timeout, self._unregister_impl,
-                                              [topic])
-        self.unregister_timers[topic].start()
+        #self.unregister_timers[topic] = Timer(self.unregister_timeout, self._unregister_impl,
+        #                                      [topic])
+        #self.unregister_timers[topic].start()
 
     def _unregister_impl(self, topic):
         if not self._publishers[topic].has_clients():
