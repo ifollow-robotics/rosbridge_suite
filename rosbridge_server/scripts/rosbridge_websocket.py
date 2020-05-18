@@ -32,6 +32,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from __future__ import print_function
+from rosbridge_library.capabilities.call_service import CallService
+from rosbridge_library.capabilities.unadvertise_service import UnadvertiseService
+from rosbridge_library.capabilities.advertise_service import AdvertiseService
+from rosbridge_library.capabilities.subscribe import Subscribe
+from rosbridge_library.capabilities.publish import Publish
+from rosbridge_library.capabilities.advertise import Advertise
+from rosbridge_server.util import get_ephemeral_port
+from rosbridge_server.autobahn_websocket import RosbridgeWebSocket
+from rosbridge_server import ClientManager
 import rospy
 import sys
 
@@ -39,22 +48,11 @@ from twisted.python import log
 from twisted.internet import reactor, ssl
 from twisted.internet.error import CannotListenError, ReactorNotRunning
 from distutils.version import LooseVersion
-import autobahn #to check version
+import autobahn  # to check version
 from autobahn.twisted.websocket import WebSocketServerFactory, listenWS
 from autobahn.websocket.compress import (PerMessageDeflateOffer,
                                          PerMessageDeflateOfferAccept)
 log.startLogging(sys.stdout)
-
-from rosbridge_server import ClientManager
-from rosbridge_server.autobahn_websocket import RosbridgeWebSocket
-from rosbridge_server.util import get_ephemeral_port
-
-from rosbridge_library.capabilities.advertise import Advertise
-from rosbridge_library.capabilities.publish import Publish
-from rosbridge_library.capabilities.subscribe import Subscribe
-from rosbridge_library.capabilities.advertise_service import AdvertiseService
-from rosbridge_library.capabilities.unadvertise_service import UnadvertiseService
-from rosbridge_library.capabilities.call_service import CallService
 
 
 def shutdown_hook():
@@ -70,7 +68,8 @@ if __name__ == "__main__":
     ##################################################
     # Parameter handling                             #
     ##################################################
-    retry_startup_delay = rospy.get_param('~retry_startup_delay', 2.0)  # seconds
+    retry_startup_delay = rospy.get_param(
+        '~retry_startup_delay', 2.0)  # seconds
 
     use_compression = rospy.get_param('~use_compression', False)
 
@@ -82,7 +81,7 @@ if __name__ == "__main__":
     RosbridgeWebSocket.max_message_size = rospy.get_param('~max_message_size',
                                                           RosbridgeWebSocket.max_message_size)
     RosbridgeWebSocket.unregister_timeout = rospy.get_param('~unregister_timeout',
-                                                          RosbridgeWebSocket.unregister_timeout)
+                                                            RosbridgeWebSocket.unregister_timeout)
     bson_only_mode = rospy.get_param('~bson_only_mode', False)
 
     if RosbridgeWebSocket.max_message_size == "None":
@@ -90,7 +89,8 @@ if __name__ == "__main__":
 
     ping_interval = float(rospy.get_param('~websocket_ping_interval', 0))
     ping_timeout = float(rospy.get_param('~websocket_ping_timeout', 30))
-    null_origin = rospy.get_param('~websocket_null_origin', True) #default to original behaviour
+    # default to original behaviour
+    null_origin = rospy.get_param('~websocket_null_origin', True)
 
     # SSL options
     certfile = rospy.get_param('~certfile', None)
@@ -172,7 +172,8 @@ if __name__ == "__main__":
             else:
                 RosbridgeWebSocket.max_message_size = int(value)
         else:
-            print("--max_message_size argument provided without a value. (can be None or <Integer>)")
+            print(
+                "--max_message_size argument provided without a value. (can be None or <Integer>)")
             sys.exit(-1)
 
     if "--unregister_timeout" in sys.argv:
@@ -190,9 +191,11 @@ if __name__ == "__main__":
             if value == "None":
                 RosbridgeWebSocket.topics_glob = []
             else:
-                RosbridgeWebSocket.topics_glob = [element.strip().strip("'") for element in value[1:-1].split(',')]
+                RosbridgeWebSocket.topics_glob = [element.strip().strip(
+                    "'") for element in value[1:-1].split(',')]
         else:
-            print("--topics_glob argument provided without a value. (can be None or a list)")
+            print(
+                "--topics_glob argument provided without a value. (can be None or a list)")
             sys.exit(-1)
 
     if "--services_glob" in sys.argv:
@@ -202,9 +205,11 @@ if __name__ == "__main__":
             if value == "None":
                 RosbridgeWebSocket.services_glob = []
             else:
-                RosbridgeWebSocket.services_glob = [element.strip().strip("'") for element in value[1:-1].split(',')]
+                RosbridgeWebSocket.services_glob = [element.strip().strip(
+                    "'") for element in value[1:-1].split(',')]
         else:
-            print("--services_glob argument provided without a value. (can be None or a list)")
+            print(
+                "--services_glob argument provided without a value. (can be None or a list)")
             sys.exit(-1)
 
     if "--params_glob" in sys.argv:
@@ -214,9 +219,11 @@ if __name__ == "__main__":
             if value == "None":
                 RosbridgeWebSocket.params_glob = []
             else:
-                RosbridgeWebSocket.params_glob = [element.strip().strip("'") for element in value[1:-1].split(',')]
+                RosbridgeWebSocket.params_glob = [element.strip().strip(
+                    "'") for element in value[1:-1].split(',')]
         else:
-            print("--params_glob argument provided without a value. (can be None or a list)")
+            print(
+                "--params_glob argument provided without a value. (can be None or a list)")
             sys.exit(-1)
 
     if ("--bson_only_mode" in sys.argv) or bson_only_mode:
@@ -296,6 +303,7 @@ if __name__ == "__main__":
             perMessageCompressionAccept=handle_compression_offers,
             autoPingInterval=ping_interval,
             autoPingTimeout=ping_timeout,
+            allowNullOrigin=null_origin,
         )
     else:
         factory.setProtocolOptions(
@@ -309,7 +317,8 @@ if __name__ == "__main__":
     while not connected and not rospy.is_shutdown():
         try:
             listenWS(factory, context_factory)
-            rospy.loginfo('Rosbridge WebSocket server started at {}'.format(uri))
+            rospy.loginfo(
+                'Rosbridge WebSocket server started at {}'.format(uri))
             connected = True
         except CannotListenError as e:
             rospy.logwarn("Unable to start server: " + str(e) +
